@@ -22,6 +22,8 @@ from config import VAULT_PATH
 QUIZ_FILES = {
     "기본": "퇴직연금/Notes/퇴직연금 - 점검문제 (기본).md",
     "심화": "퇴직연금/Notes/퇴직연금 - 점검문제 (심화).md",
+    "jsp-기본": "JSP/Notes/JSP - 점검문제 (기본).md",
+    "jsp-심화": "JSP/Notes/JSP - 점검문제 (심화).md",
 }
 
 
