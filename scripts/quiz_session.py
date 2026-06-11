@@ -20,8 +20,8 @@ from config import VAULT_PATH
 
 # Quiz name → file path mapping
 QUIZ_FILES = {
-    "기본": "20 - Notes/퇴직연금 - 점검문제 (기본).md",
-    "심화": "20 - Notes/퇴직연금 - 점검문제 (심화).md",
+    "기본": "퇴직연금/Notes/퇴직연금 - 점검문제 (기본).md",
+    "심화": "퇴직연금/Notes/퇴직연금 - 점검문제 (심화).md",
 }
 
 
