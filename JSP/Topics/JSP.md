@@ -15,12 +15,13 @@ date: 2026-06-11
 ① Servlet 기초        → JSP가 무엇 위에서 도는지 이해
 ② JSP 개요            → JSP 정의, Servlet 변환 과정
 ③ JSP 기본 문법       → 4가지 문법 요소 숙지
-④ JSP 내장 객체       → 9개 객체 + 4가지 스코프
-⑤ EL                  → ${}로 스크립틀릿 대체
-⑥ JSTL               → 태그로 조건/반복 처리
-⑦ 세션과 쿠키         → 상태 유지 메커니즘
-⑧ MVC 패턴            → Servlet + JSP 역할 분담
-⑨ JDBC 연동           → DB 데이터를 화면에 출력
+④ JSP 내장 객체       → 9개 객체 + 4가지 스코프 + 파라미터 순회
+⑤ 한글 처리           → POST/GET 인코딩 설정
+⑥ EL                  → ${}로 스크립틀릿 대체
+⑦ JSTL               → 태그로 조건/반복 처리
+⑧ 세션과 쿠키         → 상태 유지 메커니즘
+⑨ MVC 패턴            → Servlet + JSP 역할 분담
+⑩ JDBC 연동           → DB 데이터를 화면에 출력
 ```
 
 ---
@@ -41,7 +42,8 @@ date: 2026-06-11
 - [[JSP - Servlet 기초]] — HttpServlet 구조, doGet/doPost, 생명주기
 - [[JSP - 개요]] — JSP 정의, Servlet 변환 과정, 라이프사이클
 - [[JSP - 기본 문법]] — 스크립틀릿·표현식·선언·지시어 4가지 요소
-- [[JSP - 내장 객체]] — 9개 내장 객체 역할 및 스코프
+- [[JSP - 내장 객체]] — 9개 내장 객체, getParameterNames/Values, 스코프
+- [[JSP - 한글 처리]] — POST/GET 인코딩, setCharacterEncoding, euc-kr vs UTF-8
 
 ### 핵심
 - [[JSP - EL (Expression Language)]] — `${}` 문법, 스코프 접근, 연산자

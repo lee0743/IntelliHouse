@@ -32,9 +32,30 @@ JSP는 별도 선언 없이 바로 사용할 수 있는 9개의 내장 객체(Im
   4. `application` — 서버 가동 동안 유효 (`application`)
 
 - **자주 쓰는 메서드**
-  - `request.getParameter("key")` — 폼 파라미터 읽기
+  - `request.getParameter("key")` — 단일 파라미터 읽기
+  - `request.getParameterValues("key")` — 동일 이름 다중 값 배열로 읽기 (체크박스 등)
+  - `request.getParameterNames()` — 전송된 모든 파라미터 이름 목록 (`Enumeration<String>` 반환)
   - `session.setAttribute("key", value)` / `session.getAttribute("key")` — 세션 저장/조회
   - `response.sendRedirect("url")` — 리다이렉트
+
+- **전체 파라미터 순회 패턴** (`getParameterNames` + `getParameterValues`)
+  ```jsp
+  <%@ page import="java.util.Enumeration" %>
+  <%
+    Enumeration<String> e = request.getParameterNames();
+    while (e.hasMoreElements()) {
+        String name = e.nextElement();
+        String[] data = request.getParameterValues(name);
+        if (data != null) {
+            for (String eachdata : data)
+                out.println(eachdata + " ");
+        }
+        out.println("<p>");
+    }
+  %>
+  ```
+  - `type="checkbox"` → 다중 선택 가능 → `getParameterValues()` 사용
+  - `type="radio"` → 단일 선택 → `getParameter()` 사용
 
 ## My Thoughts
 
