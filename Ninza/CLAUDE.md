@@ -54,6 +54,9 @@
   - **실측 소견**: ① 반대신호를 리터럴 반전 없이 `exit_directives`로 정확히 방출(directive 설계 유효). ② 모델이
     "JSON 펜스 금지" 지시를 어기고 ```json 펜스를 붙임 → `_strip_fence`로 방어. 프로덕션은 Messages API +
     structured output으로 결정성 강제 필요(CLI는 temperature 미노출).
+- `pipeline/stress_test.py` + `examples/stress-eval.md`: 실패 모드 9종 스트레스 테스트(실제 Claude). **8/9 통과.**
+  - 판단성 규칙(혼입/어휘격리/모호한 반대신호 clarification/지원밖/인젝션/슬롯충돌)은 Haiku에서도 전부 정상.
+  - 유일한 실패는 판단이 아니라 **출력 형식**(잡담에 JSON 대신 자연어 응답) → structured output으로 구조적 해결 가능.
 
 ### 아직 미구현
 - Roslyn + NT8 DLL 컴파일 하니스 (MVP 6단계) — 현재 C#은 구조 점검만, 실제 컴파일 미검증.
