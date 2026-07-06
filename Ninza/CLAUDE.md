@@ -46,9 +46,18 @@
   - 테스트: `python -m unittest pipeline.test_pipeline -v` (11종 통과)
 - `examples/sma-crossover/`: 자연어→스펙→검증→C# 워크드 예제 (`GeneratedStrategy.cs`는 렌더러 산출물)
 
+### 해석기 (LLM 구간, 실측 검증됨)
+- `prompts/entry-interpreter.txt`, `prompts/exit-interpreter.txt`: 실제 해석기 시스템 프롬프트(블록 A~G)
+- `pipeline/interpret.py`: 인증된 Claude API 호출 하니스 (claude CLI print 모드)
+- `pipeline/check_live.py`: 자연어 → **실제 Claude** → 파이프라인 → C# 라이브 점검
+  - 실행: `python -m pipeline.check_live` — Haiku로 2회 연속 전항목 통과(스펙·directive·C# 골드 일치)
+  - **실측 소견**: ① 반대신호를 리터럴 반전 없이 `exit_directives`로 정확히 방출(directive 설계 유효). ② 모델이
+    "JSON 펜스 금지" 지시를 어기고 ```json 펜스를 붙임 → `_strip_fence`로 방어. 프로덕션은 Messages API +
+    structured output으로 결정성 강제 필요(CLI는 temperature 미노출).
+
 ### 아직 미구현
-- LLM 해석기 구간(진입/청산) — 파이프라인 앞단, API 호출. 현재 예제는 해석기 출력을 손으로 작성한 JSON으로 대체.
 - Roslyn + NT8 DLL 컴파일 하니스 (MVP 6단계) — 현재 C#은 구조 점검만, 실제 컴파일 미검증.
+- 프로덕션 해석기: Messages API + structured output(현재는 claude CLI 하니스로 대체 검증).
 
 ## 다음 작업 후보 (미착수)
 1. entry+exit+risk 통합 JSON Schema 본체 확정
