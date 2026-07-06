@@ -13,6 +13,37 @@ import subprocess
 
 HERE = pathlib.Path(__file__).resolve().parent
 PROMPTS = HERE.parent / "prompts"
+SCHEMAS = HERE.parent / "schemas"
+
+
+class FormatError(Exception):
+    """출력 형식 위반 (JSON 파싱 실패 또는 스키마 불일치). 판단 오류와 구분한다.
+
+    프로덕션에서는 structured output(constrained decoding)이 이 오류를 원천 차단한다.
+    스키마 파일(schemas/*.schema.json)이 그 constrained decoding의 계약이다.
+    """
+
+
+def _schema(name: str) -> dict | None:
+    try:
+        return json.loads((SCHEMAS / name).read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return None
+
+
+def validate_envelope(env: dict, schema_name: str) -> None:
+    """봉투를 스키마로 검증. jsonschema 미설치 시 조용히 통과(선택적 의존)."""
+    try:
+        import jsonschema
+    except ImportError:
+        return
+    schema = _schema(schema_name)
+    if schema is None:
+        return
+    try:
+        jsonschema.validate(env, schema)
+    except jsonschema.ValidationError as e:
+        raise FormatError(f"스키마 위반: {e.message} (path: {list(e.absolute_path)})")
 
 
 def _strip_fence(text: str) -> str:
@@ -42,15 +73,19 @@ def call_interpreter(system_prompt_file: str, user_input: str,
     try:
         return json.loads(cleaned)
     except json.JSONDecodeError as e:
-        raise ValueError(f"봉투 JSON 파싱 실패: {e}\n원문:\n{raw[:800]}")
+        raise FormatError(f"JSON 파싱 실패: {e} | 원문 앞부분: {raw[:200]!r}")
 
 
 def interpret_entry(user_input: str, model: str = "claude-haiku-4-5") -> dict:
-    return call_interpreter("entry-interpreter.txt", user_input, model)
+    env = call_interpreter("entry-interpreter.txt", user_input, model)
+    validate_envelope(env, "entry-envelope.schema.json")
+    return env
 
 
 def interpret_exit(user_input: str, entry_spec: dict, summary: str,
                    model: str = "claude-haiku-4-5") -> dict:
     injected = (f"{user_input}\n\n확정된 진입 스펙:\n{json.dumps(entry_spec, ensure_ascii=False)}\n"
                 f"자연어 요약: {summary}")
-    return call_interpreter("exit-interpreter.txt", injected, model)
+    env = call_interpreter("exit-interpreter.txt", injected, model)
+    validate_envelope(env, "exit-envelope.schema.json")
+    return env

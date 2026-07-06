@@ -1,0 +1,2 @@
+# 선택적: 봉투 스키마 검증용 (없으면 interpret.py가 검증을 건너뜀)
+jsonschema>=4.0

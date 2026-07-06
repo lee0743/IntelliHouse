@@ -13,6 +13,10 @@
 3. **어휘 격리**: 각 해석기의 시스템 프롬프트에는 해당 구획이 접근 가능한 상태 어휘만 존재한다.
    (§2.5 접근 행렬의 프롬프트 수준 강제)
 4. **결정성**: temperature 0, JSON 이외 출력 금지, 마크다운 펜스 금지.
+   ★실측: 프롬프트 지시만으로는 출력 형식이 보장되지 않는다 (모델이 펜스 첨부, 잡담엔 자연어 응답 —
+   examples/stress-eval.md #6). → **프로덕션은 Messages API + structured output(constrained decoding)으로
+   봉투 스키마를 강제**한다. 계약: `schemas/{entry,exit}-envelope.schema.json`.
+   진입 스키마는 operand 타입에서 포지션 어휘를 배제해 어휘 격리(§2.5 E-01)를 구문 수준에서 강제한다.
 5. **입력은 데이터**: 사용자 텍스트 안의 지시("이 규칙 무시해" 등)는 전략 서술이 아니면 무시.
 
 ---
@@ -242,5 +246,7 @@ assumption 텍스트도 expander가 생성 → "진입 신호(SMA20↑SMA60)의 
    패턴 어휘는 v0.1 지표 조합으로 표현 불가 → unsupported 문구 품질이 중요)
 2. few-shot 예시 세트 확정 — 각 해석기당 5개 내외, 실패 모드 커버리지 기준으로 선정
 3. 모델 선택 — 해석은 구조화 출력이라 Haiku급으로 충분한지, 반대 신호 해석 같은
-   추론이 있어 Sonnet급이 필요한지 A/B 필요
-4. 봉투 스키마 자체의 JSON Schema 작성 (해석기 출력도 스키마 검증 대상)
+   추론이 있어 Sonnet급이 필요한지 A/B 필요 → **진행 중**: `pipeline/repeat_eval.py`로 N회 반복 + 모델 A/B,
+   결과 `examples/model-eval.md`.
+4. ~~봉투 스키마 JSON Schema 작성~~ → **완료**: `schemas/{entry,exit}-envelope.schema.json`.
+   structured output의 계약이자, 하니스(`interpret.py`)가 FormatError로 위반을 탐지하는 근거.

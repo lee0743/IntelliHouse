@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ninza:exit-envelope",
+  "title": "청산 해석기 출력 봉투",
+  "description": "structured output이 강제할 계약. 청산 operand는 포지션 어휘(entryPrice/barsSinceEntry)를 허용. exit_directives로 반대신호 지시를 방출(리터럴 반전은 expander가 수행).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "spec", "clarifications", "assumptions", "unsupported"],
+  "properties": {
+    "status": { "enum": ["ok", "needs_clarification", "unsupported", "not_a_strategy"] },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stopLoss", "profitTarget", "trailStop", "conditions"],
+      "properties": {
+        "stopLoss": { "$ref": "#/$defs/slot" },
+        "profitTarget": { "$ref": "#/$defs/slot" },
+        "trailStop": { "$ref": "#/$defs/slot" },
+        "conditions": { "type": "array", "items": { "$ref": "#/$defs/group" } }
+      }
+    },
+    "exit_directives": { "type": "array", "items": { "$ref": "#/$defs/directive" } },
+    "clarifications": { "type": "array" },
+    "assumptions": { "type": "array" },
+    "unsupported": { "type": "array" }
+  },
+  "$defs": {
+    "slot": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "value"],
+          "properties": {
+            "mode": { "enum": ["ticks", "percent", "price", "atr"] },
+            "value": { "type": "number" },
+            "atrParams": { "type": "object" }
+          }
+        }
+      ]
+    },
+    "directive": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "target"],
+      "properties": {
+        "kind": { "const": "opposite_signal" },
+        "target": {
+          "oneOf": [
+            { "const": "all" },
+            { "type": "object", "required": ["group", "condition"],
+              "properties": { "group": { "type": "integer" }, "condition": { "type": "integer" } } },
+            { "type": "array" }
+          ]
+        }
+      }
+    },
+    "op": { "enum": ["CrossAbove", "CrossBelow", "GreaterThan", "LessThan", "GreaterThanOrEqual", "LessThanOrEqual", "Equals", "NotEquals"] },
+    "operand": {
+      "type": "object",
+      "required": ["type"],
+      "properties": { "type": { "enum": ["indicator", "price", "constant", "entryPrice", "barsSinceEntry"] } }
+    },
+    "condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lhs", "op", "rhs"],
+      "properties": {
+        "lhs": { "$ref": "#/$defs/operand" },
+        "op": { "$ref": "#/$defs/op" },
+        "rhs": { "$ref": "#/$defs/operand" }
+      }
+    },
+    "group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["conditions"],
+      "properties": {
+        "conditions": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/condition" } }
+      }
+    }
+  }
+}
