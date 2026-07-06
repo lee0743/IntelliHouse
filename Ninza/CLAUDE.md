@@ -61,9 +61,10 @@
   - **모델 업그레이드로는 둘 다 안 풀림** → MVP 해석기 = Haiku + structured output 권장.
 - `schemas/`: 봉투 JSON Schema (structured output 계약). `interpret.py`가 FormatError로 위반 탐지.
 
-### 남은 최우선 soft spot
-- **모호한 다중조건 반대신호**: clarification 대신 target:"all" 맹목 방출 경향(Haiku 1/5, Sonnet 0/5).
-  exit 프롬프트에 다중조건 전용 few-shot + clarification 예시 강화 필요(모델 아닌 프롬프트 문제).
+### soft spot 해결됨 (프롬프트 강화)
+- **모호한 다중조건 반대신호**: exit 프롬프트에 "2개 이상 조건이면 clarification" 규칙 + 다중조건 few-shot 추가
+  → Haiku **1/5 → 5/5**, 판단실패 0, pass율 87%→96%. 모델 아닌 프롬프트로 완치(examples/model-eval.md).
+- 남은 형식실패는 structured output 몫(잡담·혼입 산발). 판단(의미) 실패는 이제 0.
 
 ### 아직 미구현
 - Roslyn + NT8 DLL 컴파일 하니스 (MVP 6단계) — 현재 C#은 구조 점검만, 실제 컴파일 미검증.

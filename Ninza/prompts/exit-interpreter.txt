@@ -29,16 +29,25 @@
 N% 수익/N틱 수익 → profitTarget 슬롯,  N% 손실/N틱 손실/N% 떨어지면 → stopLoss 슬롯 (mode: percent|ticks)
 
 [반대 신호 규칙 — 핵심]
-"신호가 반대로 나오면/뒤집히면/역신호/반대로 가면" →
-연산자 반전을 직접 수행하지 말 것. 대신 exit_directives에 지시만 방출:
-  { "kind": "opposite_signal", "target": "all" }   (진입이 단일 조건일 때)
-진입이 다중 조건이면 target을 clarification으로 선택받는다. spec.conditions에는 반전 결과를 넣지 않는다.
-(실제 CrossAbove↔CrossBelow 반전은 뒤에 오는 결정적 expander가 수행한다.)
+"신호가 반대로 나오면/뒤집히면/역신호/반대로 가면" → 연산자 반전을 직접 하지 말 것.
+먼저 주입된 진입 스펙의 '조건 개수'를 세라 (모든 그룹의 conditions leaf 총합):
+ · 조건이 정확히 1개이면 → status:"ok", exit_directives:[{"kind":"opposite_signal","target":"all"}]
+ · 조건이 2개 이상(AND 또는 OR)이면 → 반전 범위가 모호하다. 절대 target을 임의로 "all"로 정하지 말 것.
+   반드시: status:"needs_clarification", exit_directives:[] (빈 배열),
+   clarifications에 대상 선택 질문 1건을 넣는다:
+     path="exit_directives[0].target", question="어느 신호가 뒤집힐 때 청산할까요?",
+     options=[각 진입 조건의 자연어 요약..., "모두"]
+spec.conditions에는 반전 결과를 넣지 않는다. (실제 CrossAbove↔CrossBelow 반전은 결정적 expander가 수행)
 
 [계좌 상태]
 "오늘 총 손실/일일 한도" 등 계좌 상태는 v0.x → unsupported + 로드맵 안내.
 
-[예시] (참고용, 테스트 입력과 무관)
-문맥 진입 = RSI(14) LessThan 30
+[예시 1] 단일 조건 진입 → target:"all" (참고용, 테스트 입력과 무관)
+문맥 진입 = RSI(14) LessThan 30  (조건 1개)
 입력: "10틱 손절, 20틱 익절하고 신호 뒤집히면 청산"
 출력: {"status":"ok","spec":{"stopLoss":{"mode":"ticks","value":10},"profitTarget":{"mode":"ticks","value":20},"trailStop":null,"conditions":[]},"exit_directives":[{"kind":"opposite_signal","target":"all"}],"clarifications":[],"assumptions":[],"unsupported":[]}
+
+[예시 2] 다중 조건 진입 → clarification (target 임의 결정 금지)
+문맥 진입 = EMA(10) CrossAbove EMA(30) 그리고 CCI(20) GreaterThan 100  (조건 2개)
+입력: "반대 신호 뜨면 청산"
+출력: {"status":"needs_clarification","spec":{"stopLoss":null,"profitTarget":null,"trailStop":null,"conditions":[]},"exit_directives":[],"clarifications":[{"path":"exit_directives[0].target","question":"어느 신호가 뒤집힐 때 청산할까요?","options":["EMA(10)이 EMA(30) 상향돌파","CCI(20)>100","모두"],"allowFreeform":false}],"assumptions":[],"unsupported":[]}
