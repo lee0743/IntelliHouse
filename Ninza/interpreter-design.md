@@ -49,6 +49,13 @@
   전부 불가능할 때만 status가 unsupported.
 - `not_a_strategy`: 입력이 전략 서술이 아님 (잡담, 질문, 지시문).
 
+**청산 해석기 전용 추가 필드 `exit_directives`** (§3 참조): 반대신호처럼 진입 스펙을
+참조해야 완성되는 지시를 담는다. 해석기는 리터럴 반전 조건을 만들지 않고 지시만 방출하며,
+결정적 expander(`opposite-signal-expander.md`)가 이를 구체 조건으로 확장한다.
+```json
+"exit_directives": [ { "kind": "opposite_signal", "target": "all" } ]
+```
+
 ---
 
 ## 2. 진입 해석기 (Entry Interpreter)
@@ -153,13 +160,16 @@ JSON과 자연어 요약을 함께 준다. 참조 해석("신호가 반대면")�
   "N% 수익/N틱 수익" → profitTarget 슬롯, "N% 손실/N틱 손실" → stopLoss 슬롯
   "본전 오면 손절을 본전으로" → v0.x (breakeven stop) → unsupported + 로드맵 안내
 
-[블록 D'] 반대 신호 해석 규칙 ★청산 특유★
-"신호가 반대로 나오면/뒤집히면/역신호" →
-  진입 스펙의 각 조건에 연산자 반전 매핑 적용:
-  CrossAbove ↔ CrossBelow, GreaterThan ↔ LessThan (경계 포함 여부 유지)
-  진입이 다중 조건(AND)이면 반전의 범위가 모호 (전체 반전 = OR? 핵심 조건만?)
-  → 조건 1개면 결정적으로 반전, 2개 이상이면 clarification:
+[블록 D'] 반대 신호 해석 규칙 ★청산 특유 — directive 방출★
+탐지 어구: "신호가 반대로 나오면/뒤집히면/역신호/반대로 가면/반대 신호"
+→ 연산자 반전을 직접 수행하지 말 것. 대신 exit_directives에 지시만 방출:
+  { "kind": "opposite_signal", "target": <selector> }
+  - 진입이 단일 조건이면 target: "all"
+  - 진입이 다중 조건(AND/OR)이면 반전 범위가 모호 → clarification 발행:
     "어느 신호가 뒤집힐 때 청산할까요?" options: [각 조건 요약..., "모두"]
+    (사용자 선택 → selector가 { "group": i, "condition": j } 또는 "all"로 기계 주입)
+※ 실제 연산자 반전(CrossAbove↔CrossBelow 등)·경계 포함 유지·반전 불가 판정은
+  결정적 expander(opposite-signal-expander.md)가 수행한다. 반전표는 이 프롬프트에 두지 않는다.
 
 [블록 F'] 금지 어휘: 없음에 가까움 (청산은 시장+포지션 모두 접근 가능)
   단, 계좌 상태("오늘 총 손실이 얼마면")는 v0.x → unsupported + 로드맵 안내
@@ -169,6 +179,8 @@ JSON과 자연어 요약을 함께 준다. 참조 해석("신호가 반대면")�
 
 문맥: 진입 = SMA(20) CrossAbove SMA(60)
 입력: "신호 반대로 가거나 5% 떨어지면 팔아"
+
+**해석기 출력** (반전을 직접 하지 않고 directive만 방출):
 ```json
 {
   "status": "ok",
@@ -176,20 +188,26 @@ JSON과 자연어 요약을 함께 준다. 참조 해석("신호가 반대면")�
     "stopLoss": { "mode": "percent", "value": 5 },
     "profitTarget": null,
     "trailStop": null,
-    "conditions": [ { "conditions": [ {
-        "lhs": {"type":"indicator","name":"SMA","params":{"period":20},"input":"Close"},
-        "op": "CrossBelow",
-        "rhs": {"type":"indicator","name":"SMA","params":{"period":60},"input":"Close"}
-    } ] } ]
+    "conditions": []
   },
+  "exit_directives": [ { "kind": "opposite_signal", "target": "all" } ],
   "clarifications": [],
-  "assumptions": [
-    { "path": "conditions[0]", "value": "SMA20 CrossBelow SMA60",
-      "reason": "진입 신호(골든크로스)의 반대 = 데드크로스로 해석" }
-  ],
+  "assumptions": [],
   "unsupported": []
 }
 ```
+
+**expander 적용 후** (결정적 코드가 진입 스펙 위에서 미러 반전):
+```json
+"conditions": [ { "conditions": [ {
+    "lhs": {"type":"indicator","name":"SMA","params":{"period":20},"input":"Close"},
+    "op": "CrossBelow",
+    "rhs": {"type":"indicator","name":"SMA","params":{"period":60},"input":"Close"}
+} ] } ]
+```
+assumption 텍스트도 expander가 생성 → "진입 신호(SMA20↑SMA60)의 미러 반전"이 항상 코드 동작과 일치.
+전체 실행 예: `examples/sma-crossover/` (01→03 변환), 명세: `opposite-signal-expander.md`.
+
 → 익절 없음은 해석기가 관여하지 않는다. X-02(손절 부재)와 달리 익절 부재는
   경고 대상도 아님 — 조건 청산이 그 역할을 하므로. 검증기의 판단 영역.
 
@@ -202,11 +220,15 @@ JSON과 자연어 요약을 함께 준다. 참조 해석("신호가 반대면")�
   → clarifications 소진될 때까지 UI 루프 (버튼 탭 → path에 값 주입, 재호출 없음)
   → 사용자 격자 확정 → entry spec 동결
 [UI 2단계] 청산 프롬프트 (carry 텍스트 프리필) + entry spec 문맥 → 청산 해석기 → 봉투
+  → [expander] exit_directives를 동결된 entry spec 위에서 구체 조건으로 확장(결정적)
   → 동일 루프 → exit spec 동결
 [UI 3단계] 리스크 폼 (해석기 없음, 순수 폼)
 [검증기] entry+exit+risk 병합 후 전체 의미 검증 (P/X/S/L 규칙)
   → 여기서 나온 경고/오류는 설명 에이전트가 자연어로 변환해 UI에 표시
+[렌더러] 병합 스펙 → NinjaScript(C#) 결정적 생성
 ```
+
+> 결정적 구간(expander → 검증기 → 렌더러)은 파이썬으로 구현·검증됨: `pipeline/` (테스트 11종 통과).
 
 핵심 계약: **clarification 응답은 재해석을 트리거하지 않는다.**
 버튼 선택값은 path에 기계적으로 주입된다. LLM 재호출은 사용자가 자연어를

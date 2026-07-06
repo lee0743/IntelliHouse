@@ -28,15 +28,27 @@
 - 공통 출력 봉투: `{status, spec(부분 채움), clarifications(path+question+options→UI 버튼), assumptions(관용 기본값 마킹), unsupported(구절별 분리 거부)}`.
 - **혼입 이월**: 진입 프롬프트에 청산 구절이 오면 `deferred_to: "exit" + carry` 텍스트로 반환 → UI가 청산 입력창에 프리필.
 - **clarification 응답은 재해석 없이 path에 기계 주입** — LLM 재호출은 자연어 재입력 시만.
-- 반대 신호 규칙: 진입 단일 조건이면 연산자 반전(CrossAbove↔CrossBelow)으로 결정적 처리, 다중 AND면 clarification.
+- 반대 신호 규칙: **LLM은 `exit_directives`로 지시만 방출, 실제 연산자 반전(CrossAbove↔CrossBelow)은 결정적 expander가 동결된 진입 스펙 위에서 수행** (silent intent error 제거). 다중 조건이면 대상 선택 clarification. 명세: `opposite-signal-expander.md`.
 - 어휘 격리: 진입 프롬프트에는 포지션 상태 어휘 자체가 없음 (E-01의 사전 차단).
 
 ## UI 흐름
 ① 진입 프롬프트 → 격자 확인/수정 → ② 청산 프롬프트(진입 요약 표시, carry 프리필) → 손절/익절/조건청산 슬롯 확인 → ③ 리스크 폼(해석기 없음, 안전 기본값) → ④ 전체 요약(설명 에이전트 역번역) → 생성. 청산 패널은 손절을 조건이 아닌 **필수 슬롯**으로 위계화.
 
-## 산출물 (작성된 문서)
+## 산출물
+### 설계 문서
 - `nt8-classification.md`: 이벤트/상태/행동 3축 + 전략 속성 분류표, 지표 레지스트리, 검증 규칙 11종
 - `interpreter-design.md`: 두 해석기 시스템 프롬프트 블록 구성, 봉투 스키마, few-shot 예시, 파이프라인 계약
+- `opposite-signal-expander.md`: 반대신호 expander 명세 (반전표, DNF 대상 의미, 에러, 테스트 매트릭스)
+
+### 구현 (결정적 구간, 파이썬)
+- `pipeline/`: registry / expander / validator / renderer / pipeline / run / test
+  - 실행: `cd Ninza && python -m pipeline.run` (예제 → C# 생성)
+  - 테스트: `python -m unittest pipeline.test_pipeline -v` (11종 통과)
+- `examples/sma-crossover/`: 자연어→스펙→검증→C# 워크드 예제 (`GeneratedStrategy.cs`는 렌더러 산출물)
+
+### 아직 미구현
+- LLM 해석기 구간(진입/청산) — 파이프라인 앞단, API 호출. 현재 예제는 해석기 출력을 손으로 작성한 JSON으로 대체.
+- Roslyn + NT8 DLL 컴파일 하니스 (MVP 6단계) — 현재 C#은 구조 점검만, 실제 컴파일 미검증.
 
 ## 다음 작업 후보 (미착수)
 1. entry+exit+risk 통합 JSON Schema 본체 확정

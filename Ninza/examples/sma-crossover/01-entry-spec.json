@@ -1,0 +1,22 @@
+{
+  "_stage": "entry-interpreter-output",
+  "_input": "20일 이동평균선이 60일 이동평균선을 상향 돌파하면 매수",
+  "status": "ok",
+  "spec": {
+    "long": [
+      {
+        "conditions": [
+          {
+            "lhs": { "type": "indicator", "name": "SMA", "params": { "period": 20 }, "input": "Close" },
+            "op": "CrossAbove",
+            "rhs": { "type": "indicator", "name": "SMA", "params": { "period": 60 }, "input": "Close" }
+          }
+        ]
+      }
+    ],
+    "short": []
+  },
+  "clarifications": [],
+  "assumptions": [],
+  "unsupported": []
+}

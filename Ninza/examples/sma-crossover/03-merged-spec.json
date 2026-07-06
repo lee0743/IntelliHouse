@@ -1,0 +1,55 @@
+{
+  "_stage": "expander-applied-and-merged",
+  "_note": "entry는 단일 그룹·단일 조건. exit_directives[0].target='all' → 반전표에서 CrossAbove→CrossBelow, 피연산자 불변. directive 소비 후 clear, conditions에 구체 그룹 append.",
+  "strategy": {
+    "name": "GeneratedStrategy",
+    "execution": { "calculate": "OnBarClose" },
+    "entry": {
+      "long": [
+        {
+          "conditions": [
+            {
+              "lhs": { "type": "indicator", "name": "SMA", "params": { "period": 20 }, "input": "Close" },
+              "op": "CrossAbove",
+              "rhs": { "type": "indicator", "name": "SMA", "params": { "period": 60 }, "input": "Close" }
+            }
+          ]
+        }
+      ],
+      "short": []
+    },
+    "exit": {
+      "stopLoss": { "mode": "percent", "value": 5 },
+      "profitTarget": null,
+      "trailStop": null,
+      "conditions": [
+        {
+          "conditions": [
+            {
+              "lhs": { "type": "indicator", "name": "SMA", "params": { "period": 20 }, "input": "Close" },
+              "op": "CrossBelow",
+              "rhs": { "type": "indicator", "name": "SMA", "params": { "period": 60 }, "input": "Close" }
+            }
+          ]
+        }
+      ]
+    },
+    "risk": {
+      "quantity": 1
+    },
+    "_derived": {
+      "barsRequiredToTrade": 60,
+      "indicatorInstances": [
+        { "id": "sma20", "name": "SMA", "input": "Close", "params": { "period": 20 } },
+        { "id": "sma60", "name": "SMA", "input": "Close", "params": { "period": 60 } }
+      ]
+    }
+  },
+  "expander_assumptions": [
+    {
+      "path": "exit.conditions[0]",
+      "value": "SMA20 CrossBelow SMA60",
+      "reason": "진입 신호(SMA20이 SMA60 상향 돌파)의 미러 반전 = 하향 돌파로 청산 조건 생성 (De Morgan 부정 아님, 연산자만 flip)"
+    }
+  ]
+}
