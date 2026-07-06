@@ -54,9 +54,16 @@
   - **실측 소견**: ① 반대신호를 리터럴 반전 없이 `exit_directives`로 정확히 방출(directive 설계 유효). ② 모델이
     "JSON 펜스 금지" 지시를 어기고 ```json 펜스를 붙임 → `_strip_fence`로 방어. 프로덕션은 Messages API +
     structured output으로 결정성 강제 필요(CLI는 temperature 미노출).
-- `pipeline/stress_test.py` + `examples/stress-eval.md`: 실패 모드 9종 스트레스 테스트(실제 Claude). **8/9 통과.**
-  - 판단성 규칙(혼입/어휘격리/모호한 반대신호 clarification/지원밖/인젝션/슬롯충돌)은 Haiku에서도 전부 정상.
-  - 유일한 실패는 판단이 아니라 **출력 형식**(잡담에 JSON 대신 자연어 응답) → structured output으로 구조적 해결 가능.
+- `pipeline/stress_test.py` + `examples/stress-eval.md`: 실패 모드 9종 스트레스 테스트(실제 Claude). 단발 8/9.
+- `pipeline/repeat_eval.py` + `examples/model-eval.md`: N=5 반복 + Haiku/Sonnet A/B.
+  - **Haiku 87% > Sonnet 78%** — 더 큰 모델이 낫지 않음(잡담엔 Sonnet이 더 자주 자연어로 응답).
+  - 실패는 ① 출력 형식(structured output으로 제거) ② 다중조건 반대신호(프롬프트·few-shot 문제)에 집중.
+  - **모델 업그레이드로는 둘 다 안 풀림** → MVP 해석기 = Haiku + structured output 권장.
+- `schemas/`: 봉투 JSON Schema (structured output 계약). `interpret.py`가 FormatError로 위반 탐지.
+
+### 남은 최우선 soft spot
+- **모호한 다중조건 반대신호**: clarification 대신 target:"all" 맹목 방출 경향(Haiku 1/5, Sonnet 0/5).
+  exit 프롬프트에 다중조건 전용 few-shot + clarification 예시 강화 필요(모델 아닌 프롬프트 문제).
 
 ### 아직 미구현
 - Roslyn + NT8 DLL 컴파일 하니스 (MVP 6단계) — 현재 C#은 구조 점검만, 실제 컴파일 미검증.
